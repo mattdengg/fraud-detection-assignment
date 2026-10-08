@@ -33,3 +33,14 @@ class TransactionResult(BaseModel):
     transaction_id: str
     status: Status
     reasons: list[FlagReason]
+
+class LoginAttempt(BaseModel):
+    account_id: str = Field(min_length=1)
+    success: bool
+    timestamp: AwareDatetime
+
+class FlaggedTransactionEvent(BaseModel):
+    transaction_id: str
+    reasons: list[FlagReason]
+    evaluated_at: AwareDatetime
+    transaction: TransactionIn
