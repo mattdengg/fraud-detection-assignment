@@ -1,3 +1,4 @@
+import os
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -7,7 +8,8 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, status
 
 from app.config import load_rule_config
-from app.events import EventPublisher, LoggingPublisher
+from app.events import EventPublisher, LoggingPublisher, SqsPublisher
+from app.store import DynamoStore, InMemoryStore, Store
 from app.models import (
     FlaggedTransactionEvent,
     LoginAttempt,
@@ -23,10 +25,18 @@ app = FastAPI(title="Fraud Detection API")
 
 @lru_cache
 def get_store() -> Store:
+    activity = os.getenv("ACCOUNT_ACTIVITY_TABLE")
+    transactions = os.getenv("TRANSACTIONS_TABLE")
+    if activity and transactions:
+        return DynamoStore(activity, transactions)
     return InMemoryStore()
+
 
 @lru_cache
 def get_publisher() -> EventPublisher:
+    queue_url = os.getenv("FLAGGED_QUEUE_URL")
+    if queue_url:
+        return SqsPublisher(queue_url)
     return LoggingPublisher()
 
 
